@@ -44,6 +44,15 @@ async function getImageWithSHA512(bfsurl) {
  * @param {Array<string>} paths
  */
 async function getImage(paths) {
+    // directly use image from biliimg for CN
+    if ((await (await cftrace).text()).includes("loc=CN") && paths.length > 1) {
+        for (const path of paths) {
+            if (path.startsWith("bfs://")) {
+                return getImageWithSHA512(path);
+            }
+        }
+    }
+    // randomly choose a source for global
     const path = paths[Math.floor(Math.random() * paths.length)];
     if (path.startsWith("bfs://")) {
         return getImageWithSHA512(path);
@@ -57,3 +66,5 @@ async function getImage(paths) {
 async function getIndexJson() {
     return await (await fetch("https://fitrom.xhustudio.eu.org/index.json")).json();
 }
+
+const cftrace = fetch("/cdn-cgi/trace");
