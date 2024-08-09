@@ -9,7 +9,7 @@ const bfsdomains = [
  * @param {string} bfsurl
  */
 async function getImageWithSHA512(bfsurl) {
-    const url = bfsurl.replace("bfs://", "https://${bfsdomains[Math.floor(Math.random() * bfsdomains.length)]}/bfs/");
+    const url = bfsurl.replace("bfs://", `https://${bfsdomains[Math.floor(Math.random() * bfsdomains.length)]}/bfs/`);
     // Fetch the image
     const response = await fetch(url, {
         referrer: ''
