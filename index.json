@@ -1,0 +1,27 @@
+{
+  "img": [
+    {
+      "name": "DSC00008.JPG",
+      "mtime": 1696026296,
+      "path": [
+        "/assets/DSC00008.JPG",
+        "bfs://archive/b10db554306e9cc3dfcc18c8599c2b157f031790.jpg"
+      ]
+    },
+    {
+      "name": "DSC00010.JPG",
+      "mtime": 1714662762,
+      "path": [
+        "/assets/DSC00010.JPG"
+      ]
+    },
+    {
+      "name": "DSC00011.JPG",
+      "mtime": 1714833794,
+      "path": [
+        "/assets/DSC00011.JPG",
+        "bfs://archive/abb3041137607fae7b7dc3146056500c3b61ef81.jpg"
+      ]
+    }
+  ]
+}
