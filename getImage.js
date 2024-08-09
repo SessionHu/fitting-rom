@@ -45,7 +45,10 @@ async function getImageWithSHA512(bfsurl) {
  */
 async function getImage(paths) {
     // directly use image from biliimg for CN
-    if ((await (await cftrace).text()).includes("loc=CN") && paths.length > 1) {
+    if (inchina === undefined) {
+        inchina = (await (await cftrace).text()).includes("loc=CN");
+    }
+    if (inchina && paths.length > 1) {
         for (const path of paths) {
             if (path.startsWith("bfs://")) {
                 return getImageWithSHA512(path);
@@ -68,3 +71,4 @@ async function getIndexJson() {
 }
 
 const cftrace = fetch("/cdn-cgi/trace");
+let inchina;
