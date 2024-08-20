@@ -51,7 +51,15 @@
       "name": "IMG_20240817_172042.jpg",
       "mtime": 1723886446,
       "path": [
-          "/assets/IMG_20240817_172042.jpg"
+        "/assets/IMG_20240817_172042.jpg"
+      ]
+    },
+    {
+      "name": "IMG_20240817_015905.jpg",
+      "mtime": 1723831145,
+      "path": [
+        "/assets/IMG_20240817_015905.jpg",
+        "bfs://archive/bb012800e5a4b6020f0983972c78e3ed595d3081.jpg"
       ]
     }
   ]
