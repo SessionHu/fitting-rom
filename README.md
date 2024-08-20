@@ -13,3 +13,5 @@
 - `upload/` 则是用于向 BFS 上传文件
 
 - 本存储库的规范域名为 `fitrom.xhustudio.eu.org`
+
+- 代码使用 MIT License, 图片等媒体内容使用 CC-BY-NC-SA-4.0
