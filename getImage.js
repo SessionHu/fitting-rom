@@ -15,23 +15,25 @@ async function getImageWithSHA512(bfsurl) {
         referrer: ''
     });
     // Convert ArrayBuffer to Uint8Array
-    const uint8Array = new Uint8Array(await response.arrayBuffer());
+    const ab = await response.arrayBuffer();
     // Get the last 129 bytes as SHA-512 hash raw
-    const hashHexRaw = new TextDecoder('utf-8').decode(uint8Array.slice(-129)).replace('\n', '');
+    const hashHexRaw = new TextDecoder('utf-8').decode(ab.slice(-129)).replace('\n', '');
     // Remove the last 129 bytes
-    const newUint8Array = uint8Array.slice(0, -129);
+    const content = ab.slice(0, -129);
     // Calculate SHA-512 hash
     const subtle = crypto.subtle;
     if (subtle) {
-        const hashBuffer = await subtle.digest('SHA-512', newUint8Array);
+      (async () => {
+        const hashBuffer = await subtle.digest('SHA-512', content);
         const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
         // if hashHex is not equals
         if (hashHex !== hashHexRaw) {
-            console.warn("URL:", url, "\nhashHexRaw:", hashHexRaw, "\nhashHex:   ", hashHex);
+          console.warn("URL:", url, "\nhashHexRaw:", hashHexRaw, "\nhashHex:   ", hashHex);
         }
+      })();
     }
     // Convert the new Uint8Array back to a Blob
-    const blob = new Blob([newUint8Array], { type: 'image/jpeg' });
+    const blob = new Blob([content], { type: 'image/jpeg' });
     // Create a URL for the Blob and display the image
     const imageUrl = URL.createObjectURL(blob);
     const img = document.createElement('img');
@@ -45,14 +47,7 @@ async function getImageWithSHA512(bfsurl) {
  */
 async function getImage(paths) {
     // directly use image from biliimg for CN
-    if (inchina === void 0) {
-      try {
-        inchina = (await cftrace).match("loc=CN");
-      } catch (e) {
-        inchina = false;
-      }
-    }
-    if (inchina && paths.length > 1) {
+    if (await inchina && paths.length > 1) {
         for (const path of paths) {
             if (path.startsWith("bfs://")) {
                 return getImageWithSHA512(path);
@@ -71,8 +66,7 @@ async function getImage(paths) {
 }
 
 async function getIndexJson() {
-    return await (await fetch("https://fitrom.xhustudio.eu.org/index.json")).json();
+  return await (await fetch("https://fitrom.xhustudio.eu.org/index.json")).json();
 }
 
-const cftrace = fetch("/cdn-cgi/trace").then(r => r.text());
-let inchina;
+const inchina = fetch("/cdn-cgi/trace").then(r => r.text()).then(t => t.match("loc=CN"));
