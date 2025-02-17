@@ -85,6 +85,7 @@ async function getImage(item) {
 function createImageElement(url) {
   const img = document.createElement("img");
   img.src = url;
+  img.referrerPolicy = 'no-referrer';
   return img;
 }
 
