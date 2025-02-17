@@ -41,9 +41,8 @@ async function getImageWithSHA512(bfsurl) {
   const blob = new Blob([content], { type: 'image/jpeg' });
   // Create a URL for the Blob and display the image
   const imageUrl = URL.createObjectURL(blob);
-  const img = document.createElement('img');
+  const img = createImageElement(imageUrl);
   img.alt = url;
-  img.src = imageUrl;
   return img;
 }
 
@@ -55,9 +54,7 @@ async function getImage(item) {
   if (await inchina) {
     if (item.raw) for (const path of item.raw) {
       if (path.startsWith("bfs://")) {
-        const img = document.createElement("img");
-        img.src = bfs2https(path);
-        return img;
+        return createImageElement(bfs2https(path));
       }
     }
     if (item.hashed) for (const path of item.hashed) {
@@ -74,13 +71,21 @@ async function getImage(item) {
     return arr;
   })());
   const pat = choice(item[typ]);
-  if (pat.startsWith("bfs://") && typ === 'hashed') {
-      return getImageWithSHA512(pat);
+  if (pat.startsWith("bfs://")) {
+    if (typ === 'hashed') return getImageWithSHA512(pat);
+    else return createImageElement(bfs2https(pat));
   } else {
-      const img = document.createElement("img");
-      img.src = "https://fitrom.xhustudio.eu.org" + pat;
-      return img;
+    return createImageElement("https://fitrom.xhustudio.eu.org" + pat);
   }
+}
+
+/**
+ * @param {string} url
+ */
+function createImageElement(url) {
+  const img = document.createElement("img");
+  img.src = url;
+  return img;
 }
 
 /**
