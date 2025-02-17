@@ -2,67 +2,92 @@
 'use strict';
 
 const bfsdomains = [
-    "i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com", "archive.biliimg.com"
+  "i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com", "archive.biliimg.com"
 ]
 
 /**
  * @param {string} bfsurl
  */
-async function getImageWithSHA512(bfsurl) {
-    const url = bfsurl.replace("bfs://", `https://${bfsdomains[Math.floor(Math.random() * bfsdomains.length)]}/bfs/`);
-    // Fetch the image
-    const response = await fetch(url, {
-        referrer: ''
-    });
-    // Convert ArrayBuffer to Uint8Array
-    const ab = await response.arrayBuffer();
-    // Get the last 129 bytes as SHA-512 hash raw
-    const hashHexRaw = new TextDecoder('utf-8').decode(ab.slice(-129)).replace('\n', '');
-    // Remove the last 129 bytes
-    const content = ab.slice(0, -129);
-    // Calculate SHA-512 hash
-    const subtle = crypto.subtle;
-    if (subtle) {
-      (async () => {
-        const hashBuffer = await subtle.digest('SHA-512', content);
-        const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-        // if hashHex is not equals
-        if (hashHex !== hashHexRaw) {
-          console.warn("URL:", url, "\nhashHexRaw:", hashHexRaw, "\nhashHex:   ", hashHex);
-        }
-      })();
-    }
-    // Convert the new Uint8Array back to a Blob
-    const blob = new Blob([content], { type: 'image/jpeg' });
-    // Create a URL for the Blob and display the image
-    const imageUrl = URL.createObjectURL(blob);
-    const img = document.createElement('img');
-    img.alt = url;
-    img.src = imageUrl;
-    return img;
+function bfs2https(bfsurl) {
+  return bfsurl.replace("bfs://", `https://${bfsdomains[Math.floor(Math.random() * bfsdomains.length)]}/bfs/`);
 }
 
 /**
- * @param {Array<string>} paths
+ * @param {string} bfsurl
  */
-async function getImage(paths) {
-    // directly use image from biliimg for CN
-    if (await inchina && paths.length > 1) {
-        for (const path of paths) {
-            if (path.startsWith("bfs://")) {
-                return getImageWithSHA512(path);
-            }
-        }
-    }
-    // randomly choose a source for global
-    const path = paths[Math.floor(Math.random() * paths.length)];
-    if (path.startsWith("bfs://")) {
-        return getImageWithSHA512(path);
-    } else {
+async function getImageWithSHA512(bfsurl) {
+  const url = bfs2https(bfsurl);
+  // Fetch the image
+  const response = await fetch(url, { referrer: '' });
+  // Convert ArrayBuffer to Uint8Array
+  const ab = await response.arrayBuffer();
+  // Get the last 129 bytes as SHA-512 hash raw
+  const hashHexRaw = new TextDecoder('utf-8').decode(ab.slice(ab.byteLength - 129)).replace('\n', '');
+  // Remove the last 129 bytes
+  const content = ab.slice(0, ab.byteLength - 129);
+  // Calculate SHA-512 hash
+  const subtle = crypto.subtle;
+  if (subtle) {
+    (async () => {
+      const hashBuffer = await subtle.digest('SHA-512', content);
+      const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+      // if hashHex is not equals
+      if (hashHex !== hashHexRaw) {
+        console.warn("URL:", url, "\nhashHexRaw:", hashHexRaw, "\nhashHex:   ", hashHex);
+      }
+    })();
+  }
+  // Convert the new Uint8Array back to a Blob
+  const blob = new Blob([content], { type: 'image/jpeg' });
+  // Create a URL for the Blob and display the image
+  const imageUrl = URL.createObjectURL(blob);
+  const img = document.createElement('img');
+  img.alt = url;
+  img.src = imageUrl;
+  return img;
+}
+
+/**
+ * @param {{raw?: string[], hashed?: string[]}} item
+ */
+async function getImage(item) {
+  // directly use image from biliimg for CN
+  if (await inchina) {
+    if (item.raw) for (const path of item.raw) {
+      if (path.startsWith("bfs://")) {
         const img = document.createElement("img");
-        img.src = "https://fitrom.xhustudio.eu.org" + path;
+        img.src = bfs2https(path);
         return img;
+      }
     }
+    if (item.hashed) for (const path of item.hashed) {
+      if (path.startsWith("bfs://")) {
+        return getImageWithSHA512(path);
+      }
+    }
+  }
+  // randomly choose a source for global
+  const typ = choice((() => {
+    const arr = [];
+    if (item.raw) arr.push('raw');
+    if (item.hashed) arr.push('hashed');
+    return arr;
+  })());
+  const pat = choice(item[typ]);
+  if (pat.startsWith("bfs://") && typ === 'hashed') {
+      return getImageWithSHA512(pat);
+  } else {
+      const img = document.createElement("img");
+      img.src = "https://fitrom.xhustudio.eu.org" + pat;
+      return img;
+  }
+}
+
+/**
+ * @param {any[]} arr
+ */
+function choice(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 
 async function getIndexJson() {
