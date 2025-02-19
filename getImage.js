@@ -18,23 +18,24 @@ const withWorker = (() => {
   /** @type {Promise<URL>[]} */
   const datas = [];
   const max = navigator.hardwareConcurrency || 2;
+  const js = fetch('https://' + FITROM_HOST + '/worker.js').then(r => r.blob()).then(b => URL.createObjectURL(b));
   /**
    * @param {string} hashimgurl
    * @return {Promise<URL>}
    */
   return async (hashimgurl) => {
     if (datas.length >= max) await Promise.race(datas);
-    const worker = new Worker('https://' + FITROM_HOST + '/worker.js');
+    const worker = new Worker(await js);
     worker.postMessage({
       url: hashimgurl
     });
     const data = new Promise((resolve) => {
-      datas.push(data);
       worker.onmessage = (ev) => {
         resolve(ev.data);
         datas.splice(datas.indexOf(data), 1);
       };
     });
+    datas.push(data);
     return data;
   };
 })();
