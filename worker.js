@@ -24,9 +24,6 @@ self.onmessage = async (ev) => {
       console.warn("URL:", url, "\nhashHexRaw:", hashHexRaw, "\nhashHex:   ", hashHex);
     }
   }
-  // Convert the new Uint8Array back to a Blob
-  const blob = new Blob([content], { type: 'image/jpeg' });
-  // Create a URL for the Blob
-  self.postMessage(URL.createObjectURL(blob));
+  self.postMessage(content, { transfer: [content]});
   self.close(); 
 };

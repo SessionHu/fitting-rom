@@ -31,7 +31,10 @@ const withWorker = (() => {
     });
     const data = new Promise((resolve) => {
       worker.onmessage = (ev) => {
-        resolve(ev.data);
+        // Convert the new Uint8Array back to a Blob
+        const blob = new Blob([ev.data], { type: 'image/jpeg' });
+        // Create a URL for the Blob
+        resolve(URL.createObjectURL(blob));
         datas.splice(datas.indexOf(data), 1);
       };
     });
