@@ -3,7 +3,9 @@
 
 const bfsdomains = [
   "i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com", "archive.biliimg.com"
-]
+];
+
+const FITROM_HOST = 'fitrom.xhustudio.eu.org';
 
 /**
  * @param {string} bfsurl
@@ -12,36 +14,63 @@ function bfs2https(bfsurl) {
   return bfsurl.replace("bfs://", `https://${bfsdomains[Math.floor(Math.random() * bfsdomains.length)]}/bfs/`);
 }
 
+const doTask = (() => {
+  /** @type {Promise<any>[]} */
+  const datas = [];
+  const max = navigator.hardwareConcurrency || 2;
+  /**
+   * @param {(...p: any[]) => any} task
+   * @param {any[]} params
+   * @return {Promise<any>}
+   */
+  return async (task, params = []) => {
+    if (datas.length >= max) await Promise.race(datas);
+    const worker = new Worker('https://' + FITROM_HOST + '/worker.js');
+    worker.postMessage({
+      fn: task,
+      params: params
+    });
+    const data = new Promise((resolve) => {
+      datas.push(data);
+      worker.onmessage = (ev) => {
+        resolve(ev.data);
+        datas.splice(datas.indexOf(data), 1);
+      };
+    });
+    return data;
+  };
+})();
+
 /**
  * @param {string} bfsurl
  */
 async function getImageWithSHA512(bfsurl) {
   const url = bfs2https(bfsurl);
-  // Fetch the image
-  const response = await fetch(url, { referrer: '' });
-  // Convert ArrayBuffer to Uint8Array
-  const ab = await response.arrayBuffer();
-  // Get the last 129 bytes as SHA-512 hash raw
-  const hashHexRaw = new TextDecoder('utf-8').decode(ab.slice(ab.byteLength - 129)).replace('\n', '');
-  // Remove the last 129 bytes
-  const content = ab.slice(0, ab.byteLength - 129);
-  // Calculate SHA-512 hash
-  const subtle = crypto.subtle;
-  if (subtle) {
-    (async () => {
+  const bloburl = await doTask(async () => {
+    // Fetch the image
+    const response = await fetch(url, { referrer: '' });
+    // Get ArrayBuffer
+    const ab = await response.arrayBuffer();
+    // Get the last 129 bytes as SHA-512 hash raw
+    const hashHexRaw = new TextDecoder('utf-8').decode(ab.slice(ab.byteLength - 129)).replace('\n', '');
+    // Remove the last 129 bytes
+    const content = ab.slice(0, ab.byteLength - 129);
+    // Calculate SHA-512 hash
+    const subtle = crypto.subtle;
+    if (subtle) {
       const hashBuffer = await subtle.digest('SHA-512', content);
       const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
       // if hashHex is not equals
       if (hashHex !== hashHexRaw) {
         console.warn("URL:", url, "\nhashHexRaw:", hashHexRaw, "\nhashHex:   ", hashHex);
       }
-    })();
-  }
-  // Convert the new Uint8Array back to a Blob
-  const blob = new Blob([content], { type: 'image/jpeg' });
-  // Create a URL for the Blob and display the image
-  const imageUrl = URL.createObjectURL(blob);
-  const img = createImageElement(imageUrl);
+    }
+    // Convert the new Uint8Array back to a Blob
+    const blob = new Blob([content], { type: 'image/jpeg' });
+    // Create a URL for the Blob
+    return URL.createObjectURL(blob);
+  });
+  const img = createImageElement(bloburl);
   img.alt = url;
   return img;
 }
@@ -75,7 +104,7 @@ async function getImage(item) {
     if (typ === 'hashed') return getImageWithSHA512(pat);
     else return createImageElement(bfs2https(pat));
   } else {
-    return createImageElement("https://fitrom.xhustudio.eu.org" + pat);
+    return createImageElement("https://" + FITROM_HOST + pat);
   }
 }
 
@@ -97,7 +126,7 @@ function choice(arr) {
 }
 
 async function getIndexJson() {
-  return await (await fetch("https://fitrom.xhustudio.eu.org/index.json")).json();
+  return await (await fetch("https://" + FITROM_HOST + "/index.json")).json();
 }
 
 const inchina = fetch("/cdn-cgi/trace").then(r => r.text()).then(t => t.match("loc=CN"));
