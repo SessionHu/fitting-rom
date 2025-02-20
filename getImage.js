@@ -26,9 +26,6 @@ const withWorker = (() => {
   return async (hashimgurl) => {
     if (datas.length >= max) await Promise.race(datas);
     const worker = new Worker(await js);
-    worker.postMessage({
-      url: hashimgurl
-    });
     const data = new Promise((resolve) => {
       worker.onmessage = (ev) => {
         // Convert the new Uint8Array back to a Blob
@@ -39,6 +36,9 @@ const withWorker = (() => {
       };
     });
     datas.push(data);
+    worker.postMessage({
+      url: hashimgurl
+    });
     return data;
   };
 })();
@@ -49,7 +49,7 @@ const withWorker = (() => {
 async function getImageWithSHA512(bfsurl) {
   const url = bfs2https(bfsurl);
   const bloburl = await withWorker(url);
-  const img = createImageElement(bloburl.toString());
+  const img = createImageElement(bloburl.toString(), url + '@122h_234w_1e');
   img.alt = url;
   return img;
 }
@@ -89,10 +89,12 @@ async function getImage(item) {
 
 /**
  * @param {string} url
+ * @param {string} small
  */
-function createImageElement(url) {
+function createImageElement(url, small = url) {
   const img = document.createElement("img");
-  img.src = url;
+  img.setAttribute('layer-src', url);
+  img.src = small;
   img.referrerPolicy = 'no-referrer';
   return img;
 }
