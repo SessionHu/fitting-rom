@@ -28,7 +28,8 @@ const withWorker = (() => {
     const worker = new Worker(await js);
     const data = new Promise((resolve) => {
       worker.onmessage = (ev) => {
-        // Convert the new Uint8Array back to a Blob
+        if (!(ev.data instanceof ArrayBuffer)) return;
+        // Convert to a Blob
         const blob = new Blob([ev.data], { type: 'image/jpeg' });
         // Create a URL for the Blob
         resolve(URL.createObjectURL(blob));
@@ -49,7 +50,8 @@ const withWorker = (() => {
 async function getImageWithSHA512(bfsurl) {
   const url = bfs2https(bfsurl);
   const bloburl = await withWorker(url);
-  const img = createImageElement(bloburl.toString(), url + '@122h_234w_1e');
+  const rt = window.devicePixelRatio || 1;
+  const img = await createImageElement(bloburl.toString(), url + `@${122 * rt}h_${234 * rt}w_1e`);
   img.alt = url;
   return img;
 }
@@ -91,9 +93,9 @@ async function getImage(item) {
  * @param {string} url
  * @param {string} small
  */
-function createImageElement(url, small = url) {
+async function createImageElement(url, small = url) {
   const img = document.createElement("img");
-  img.setAttribute('layer-src', url);
+  img.setAttribute('layer-src', URL.createObjectURL(await (await fetch(url, { referrer: '' })).blob()));
   img.src = small;
   img.referrerPolicy = 'no-referrer';
   return img;
