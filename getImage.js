@@ -95,7 +95,8 @@ async function getImage(item) {
  */
 async function createImageElement(url, small = url) {
   const img = document.createElement("img");
-  img.setAttribute('layer-src', URL.createObjectURL(await (await fetch(url, { referrer: '' })).blob()));
+  if (small !== url)
+    img.setAttribute('layer-src', URL.createObjectURL(await (await fetch(url, { referrer: '' })).blob()));
   img.src = small;
   img.referrerPolicy = 'no-referrer';
   return img;
